@@ -1,0 +1,4 @@
+# Optional local Coqui XTTS runtime. Install separately because PyTorch and
+# platform-specific audio dependencies make this substantially heavier than the
+# API service's base environment.
+TTS==0.22.0

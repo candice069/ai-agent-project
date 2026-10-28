@@ -1,0 +1,26 @@
+{
+  "dataset_version": "1.0.0",
+  "questions": [
+    {
+      "id": "architecture-1",
+      "question": "Which components store conversation state and vector knowledge?",
+      "expected_terms": ["redis", "qdrant"],
+      "expected_sources": ["ai_agent.md"],
+      "forbidden_terms": ["mongodb"]
+    },
+    {
+      "id": "retrieval-1",
+      "question": "How does this agent combine semantic and keyword retrieval?",
+      "expected_terms": ["dense", "lexical", "hybrid"],
+      "expected_sources": ["ai_agent.md"],
+      "forbidden_terms": ["elasticsearch"]
+    },
+    {
+      "id": "memory-1",
+      "question": "Where is session memory persisted?",
+      "expected_terms": ["redis"],
+      "expected_sources": ["ai_agent.md"],
+      "forbidden_terms": ["browser local storage"]
+    }
+  ]
+}
