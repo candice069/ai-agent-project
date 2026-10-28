@@ -16,6 +16,29 @@ def percent_change(baseline: float, candidate: float, lower_is_better: bool = Fa
 def compare(baseline: Dict[str, Any], candidate: Dict[str, Any]) -> Dict[str, Any]:
     base_quality = baseline.get("overall", {}).get("quality", {})
     candidate_quality = candidate.get("overall", {}).get("quality", {})
+    same_dataset = (
+        baseline.get("dataset_version") == candidate.get("dataset_version")
+        and baseline.get("overall", {}).get("num_questions")
+        == candidate.get("overall", {}).get("num_questions")
+    )
+    quality_gates = {
+        metric: candidate_quality.get(metric, 0.0)
+        >= base_quality.get(metric, 0.0)
+        for metric in ("term_recall", "factuality_proxy", "recall_at_k")
+    }
+    hallucination_gate = (
+        candidate_quality.get("hallucination_rate", 0.0)
+        <= base_quality.get("hallucination_rate", 0.0)
+    )
+    baseline_p95 = baseline.get("overall", {}).get("p95_time", 0.0)
+    candidate_p95 = candidate.get("overall", {}).get("p95_time", 0.0)
+    latency_gate = baseline_p95 == 0 or candidate_p95 <= baseline_p95 * 1.1
+    gates = {
+        "same_dataset": same_dataset,
+        **quality_gates,
+        "hallucination_rate": hallucination_gate,
+        "p95_latency_within_10_percent": latency_gate,
+    }
     return {
         "sample_count": candidate.get("overall", {}).get("num_questions", 0),
         "dataset_version": candidate.get("dataset_version", "unknown"),
@@ -41,6 +64,17 @@ def compare(baseline: Dict[str, Any], candidate: Dict[str, Any]) -> Dict[str, An
                 baseline.get("overall", {}).get("p95_time", 0.0),
                 candidate.get("overall", {}).get("p95_time", 0.0),
                 lower_is_better=True,
+            ),
+        },
+        "promotion": {
+            "eligible": all(gates.values()),
+            "gates": gates,
+            "candidate_prompt_versions": candidate.get(
+                "configuration", {}
+            ).get("prompt_versions", {}),
+            "note": (
+                "Eligibility is an automated regression gate; a human must "
+                "still review raw answers before changing PROMPT_VERSION."
             ),
         },
     }

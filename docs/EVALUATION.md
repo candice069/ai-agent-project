@@ -45,6 +45,19 @@ python scripts/compare_benchmarks.py \
   --output benchmark-results/comparison.json
 ```
 
+Each run records the selected prompt name and version. To review production
+feedback before creating a candidate prompt:
+
+```bash
+python scripts/analyze_feedback.py \
+  --output benchmark-results/feedback-analysis.json
+```
+
+Create a new prompt version only after reviewing negative examples. Set
+`PROMPT_VERSION` for the candidate run, compare it against the unchanged
+baseline, and promote it only when quality does not regress and latency/token
+cost remain acceptable. Feedback never edits a live prompt automatically.
+
 ## Metrics
 
 - `term_recall`: expected answer terms found divided by labeled terms.

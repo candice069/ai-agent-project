@@ -68,7 +68,8 @@ async def process_voice(
         agent = AIAgent(llm_service)
         response, sources = await agent.process_message(
             message=text_input,
-            session_id=session_id
+            session_id=session_id,
+            interaction_type="voice",
         )
 
         return VoiceResponse(
@@ -179,7 +180,11 @@ async def realtime_voice(websocket: WebSocket, session_id: str):
                 await websocket.send_json({"type": "error", "error": "empty input"})
                 continue
 
-            response, sources = await agent.process_message(text, session_id)
+            response, sources = await agent.process_message(
+                text,
+                session_id,
+                interaction_type="voice",
+            )
             payload = {
                 "type": "response",
                 "text": response,

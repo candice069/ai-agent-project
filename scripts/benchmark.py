@@ -22,6 +22,7 @@ from dotenv import load_dotenv
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.core.agent import AIAgent
+from app.core.prompts import PROMPTS
 from app.services.llm_service import LLMService
 from app.config import LLM_MODEL, EMBEDDING_MODEL
 from app.utils.evaluation import score_answer, aggregate_scores
@@ -74,6 +75,7 @@ async def benchmark_agent(questions: List[Any], num_runs: int = 3, timeout: int 
                 success = True
                 error = None
                 scores = score_answer(response, sources, case)
+                prompt_metadata = dict(agent.last_prompt_metadata)
                 all_scores.append(scores)
             except asyncio.TimeoutError:
                 response = "Timeout"
@@ -81,12 +83,14 @@ async def benchmark_agent(questions: List[Any], num_runs: int = 3, timeout: int 
                 success = False
                 error = "Timeout"
                 scores = {}
+                prompt_metadata = {}
             except Exception as e:
                 response = "Error"
                 sources = []
                 success = False
                 error = str(e)
                 scores = {}
+                prompt_metadata = {}
 
             end_time = time.time()
             elapsed_time = end_time - start_time
@@ -101,6 +105,7 @@ async def benchmark_agent(questions: List[Any], num_runs: int = 3, timeout: int 
                 "response": response,
                 "sources": sources,
                 "scores": scores,
+                "prompt": prompt_metadata,
             })
 
             logger.info(f"    Time: {elapsed_time:.2f}s, Success: {success}")
@@ -178,6 +183,9 @@ async def benchmark_agent(questions: List[Any], num_runs: int = 3, timeout: int 
         "configuration": {
             "llm_model": LLM_MODEL,
             "embedding_model": EMBEDDING_MODEL,
+            "prompt_versions": {
+                name: prompt.version for name, prompt in PROMPTS.items()
+            },
         },
         "overall": overall_stats,
         "questions": results

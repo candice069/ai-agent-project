@@ -9,6 +9,7 @@ class RetrievalRoute:
     use_knowledge_base: bool = True
     use_web: bool = False
     reason: str = "knowledge"
+    prompt_type: str = "rag"
 
 
 class QueryRouter:
@@ -44,11 +45,24 @@ class QueryRouter:
                 use_knowledge_base=False,
                 use_web=False,
                 reason="conversation",
+                prompt_type="general",
             )
         if any(re.search(pattern, text, re.IGNORECASE) for pattern in self._CURRENT_PATTERNS):
-            return RetrievalRoute(use_web=True, reason="time_sensitive")
+            return RetrievalRoute(
+                use_web=True,
+                reason="time_sensitive",
+                prompt_type="web",
+            )
         if any(re.search(pattern, text, re.IGNORECASE) for pattern in self._SEARCH_PATTERNS):
-            return RetrievalRoute(use_web=True, reason="explicit_web")
+            return RetrievalRoute(
+                use_web=True,
+                reason="explicit_web",
+                prompt_type="web",
+            )
         if self._QUESTION_PATTERN.search(text):
-            return RetrievalRoute(use_web=True, reason="open_question")
+            return RetrievalRoute(
+                use_web=True,
+                reason="open_question",
+                prompt_type="web",
+            )
         return RetrievalRoute(reason="knowledge")

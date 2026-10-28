@@ -4,6 +4,11 @@
 
 - `app/routes`: HTTP and WebSocket transport.
 - `app/core/agent.py`: retrieval, ranking, prompting, and generation orchestration.
+- `app/core/prompts.py`: versioned prompt registry and route-specific few-shot
+  templates.
+- `app/core/context_builder.py`: token-aware allocation for summaries, recent
+  turns, and retrieved sources.
+- `app/core/feedback.py`: Redis-backed prompt-run and feedback evidence.
 - `app/core/memory.py`: Redis-backed recent conversation history and summaries.
 - `app/core/stt.py`, `app/core/tts.py`: pluggable speech providers.
 - `app/services`: adapters for the LLM, Qdrant, Redis, and SerpAPI.
@@ -22,11 +27,18 @@ POST /chat/
      -> hybrid Qdrant retrieval (dense + lexical)
      -> optional SerpAPI retrieval for current information
      -> deduplicate, fuse, filter, and rerank
-     -> construct grounded prompt
+     -> select a general, RAG, or web prompt
+     -> construct token-bounded context and render the versioned prompt
      -> generate an LLM answer
      -> persist recent history and update the session summary
-  -> return answer, citations, and session_id
+  -> persist prompt-run metadata for feedback
+  -> return answer, citations, prompt version, and session_id
 ```
+
+`POST /chat/feedback` records a rating, optional failure reason, and corrected
+answer against the exact response and prompt version. Feedback is analyzed
+offline with `scripts/analyze_feedback.py`; production prompts are never changed
+automatically from unreviewed feedback.
 
 ## Voice and realtime flow
 

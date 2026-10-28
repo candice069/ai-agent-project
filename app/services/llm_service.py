@@ -2,7 +2,7 @@ from langchain_openai import ChatOpenAI, OpenAI
 from typing import Any, Dict, Optional
 import logging
 
-from app.config import LLM_MODEL, LLM_API_KEY
+from app.config import LLM_MODEL, LLM_API_KEY, RESPONSE_TOKEN_BUDGET
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +38,7 @@ class LLMService:
             model_name=self.model_name,
             openai_api_key=self.api_key,
             temperature=temperature,
+            max_tokens=RESPONSE_TOKEN_BUDGET,
             streaming=streaming,
             verbose=True
         )

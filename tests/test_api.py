@@ -5,6 +5,7 @@ import json
 
 from app.main import app
 from app.core.agent import AIAgent
+from app.routes.chat import get_feedback_store
 from app.services.llm_service import LLMService
 from app.core.tts import TextToSpeech
 from app.core.stt import SpeechToText
@@ -22,7 +23,20 @@ def mock_ai_agent():
         mock_instance.process_message = AsyncMock(return_value=("Test response", [{"title": "Source", "url": "http://example.com"}]))
         mock_instance.memory_store = MagicMock()
         mock_instance.memory_store.clear_history = MagicMock()
+        mock_instance.last_prompt_metadata = {
+            "prompt_name": "general",
+            "prompt_version": "v1",
+        }
         yield mock_instance
+
+
+@pytest.fixture
+def mock_feedback_store():
+    store = MagicMock()
+    store.submit_feedback.return_value = {"rating": 1}
+    app.dependency_overrides[get_feedback_store] = lambda: store
+    yield store
+    app.dependency_overrides.pop(get_feedback_store, None)
 
 @pytest.fixture
 def mock_llm_service():
@@ -51,7 +65,14 @@ class TestChatEndpoints:
     """Test suite for chat endpoints"""
 
     @patch('app.routes.chat.AIAgent')
-    async def test_chat_endpoint(self, mock_agent_class, test_client, mock_ai_agent, mock_llm_service):
+    async def test_chat_endpoint(
+        self,
+        mock_agent_class,
+        test_client,
+        mock_ai_agent,
+        mock_llm_service,
+        mock_feedback_store,
+    ):
         """Test the chat endpoint"""
         mock_agent_class.return_value = mock_ai_agent
 
@@ -70,12 +91,38 @@ class TestChatEndpoints:
         assert data["response"] == "Test response"
         assert len(data["sources"]) == 1
         assert data["session_id"] == "test_session"
+        assert data["prompt"]["prompt_name"] == "general"
 
         # Verify the agent call
         mock_ai_agent.process_message.assert_called_once_with(
             message="Hello, AI",
             session_id="test_session"
         )
+        mock_feedback_store.record_response.assert_called_once()
+
+    @patch('app.routes.chat.AIAgent')
+    async def test_feedback_endpoint(
+        self,
+        mock_agent_class,
+        test_client,
+        mock_feedback_store,
+    ):
+        response = test_client.post(
+            "/chat/feedback",
+            json={
+                "message_id": "message-1",
+                "session_id": "test-session",
+                "rating": 1,
+                "reason": "Helpful",
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.json() == {
+            "message_id": "message-1",
+            "status": "recorded",
+        }
+        mock_feedback_store.submit_feedback.assert_called_once()
 
     @patch('app.routes.chat.AIAgent')
     async def test_clear_chat_history_endpoint(self, mock_agent_class, test_client, mock_ai_agent):
@@ -124,7 +171,8 @@ class TestVoiceEndpoints:
         mock_stt.transcribe.assert_called_once()
         mock_ai_agent.process_message.assert_called_once_with(
             message="Test transcription",
-            session_id="test_session"
+            session_id="test_session",
+            interaction_type="voice",
         )
 
     @patch('app.routes.voice.TextToSpeech')

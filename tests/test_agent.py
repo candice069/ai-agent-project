@@ -48,7 +48,11 @@ def mock_memory_store():
     """Create a mock Redis memory store for testing"""
     with patch('app.core.memory.RedisMemoryStore') as mock:
         mock_instance = mock.return_value
-        mock_instance.get_history.return_value = MagicMock()
+        history = MagicMock()
+        history.load_memory_variables.return_value = {"history": ""}
+        mock_instance.get_history.return_value = history
+        mock_instance.get_summary.return_value = ""
+        mock_instance.should_summarize.return_value = False
         yield mock_instance
 
 @pytest.fixture
@@ -72,6 +76,8 @@ class TestAIAgent:
         # Verify the response
         assert response == "This is a test response"
         assert len(sources) > 0
+        assert agent.last_prompt_metadata["prompt_name"] == "web"
+        assert agent.last_prompt_metadata["prompt_version"] == "v1"
 
         # Verify service calls
         agent.memory_store.get_history.assert_called_once_with("test_session")

@@ -10,6 +10,10 @@ A powerful, stateful AI agent capable of natural language interaction in both te
 - **Vector Storage**: Uses Qdrant to store and query high-dimensional embeddings for efficient semantic search
 - **Web Search Integration**: Leverages SerpAPI to provide up-to-date information from the web
 - **Voice Capabilities**: Includes text-to-speech (TTS) and speech-to-text (STT) functionality
+- **Versioned Prompting**: Routes conversation, RAG, web, and voice turns through
+  dedicated templates with grounded few-shot examples
+- **Prompt Feedback**: Records ratings against the exact response and prompt
+  version for offline analysis
 
 ## Architecture
 
@@ -132,6 +136,17 @@ The API will be available at `http://localhost:8000`.
   }
   ```
 
+- **Response feedback**: `POST /chat/feedback`
+  ```json
+  {
+    "message_id": "response-message-id",
+    "session_id": "user123",
+    "rating": -1,
+    "reason": "Missing citation",
+    "corrected_answer": "Optional reviewed answer"
+  }
+  ```
+
 - **Voice Interaction**: `POST /voice/`
   - Accepts audio file upload
   - Returns a text response; call `POST /voice/tts` for audio
@@ -200,6 +215,13 @@ To evaluate system performance:
 
 ```bash
 python scripts/benchmark.py
+```
+
+Export and summarize collected prompt feedback:
+
+```bash
+python scripts/analyze_feedback.py \
+  --output benchmark-results/feedback-analysis.json
 ```
 
 ## License

@@ -8,6 +8,12 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4.1-mini")
 LLM_API_KEY = os.getenv("LLM_API_KEY") or OPENAI_API_KEY
+PROMPT_VERSION = os.getenv("PROMPT_VERSION", "v1")
+LLM_CONTEXT_WINDOW = int(os.getenv("LLM_CONTEXT_WINDOW", 16000))
+RESPONSE_TOKEN_BUDGET = int(os.getenv("RESPONSE_TOKEN_BUDGET", 2000))
+MAX_HISTORY_TOKENS = int(os.getenv("MAX_HISTORY_TOKENS", 3000))
+MAX_RETRIEVAL_TOKENS = int(os.getenv("MAX_RETRIEVAL_TOKENS", 6000))
+MAX_SUMMARY_TOKENS = int(os.getenv("MAX_SUMMARY_TOKENS", 1500))
 
 # Redis Configuration
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
